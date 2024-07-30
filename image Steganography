@@ -1,0 +1,314 @@
+import tkinter as tk
+from tkinter import messagebox, filedialog
+from PIL import ImageTk, Image
+import requests
+import os
+
+class IMG_Stegno:
+    output_image_size = 0
+
+    def __init__(self, root):
+        self.root = root
+        self.create_login_page()
+
+    def create_login_page(self):
+        self.root.title('Hide Your Data - Login')
+        self.root.geometry('700x500')
+        self.root.resizable(width=False, height=False)
+
+        self.background_image = Image.open('background_image.png')
+        self.background_photo = ImageTk.PhotoImage(self.background_image)
+        self.background_label = tk.Label(self.root, image=self.background_photo)
+        self.background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        self.login_frame = tk.Frame(self.root, bg='white', bd=5)
+        self.login_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        title = tk.Label(self.login_frame, text='Login', bg='white')
+        title.config(font=('Agency FB', 30, 'bold'))
+        title.grid(row=0, columnspan=2, pady=10)
+
+        tk.Label(self.login_frame, text='Username:', bg='white', fg='black').grid(row=1, column=0, padx=20, pady=10)
+        self.username_entry = tk.Entry(self.login_frame, width=30)
+        self.username_entry.grid(row=1, column=1, padx=20, pady=10)
+
+        tk.Label(self.login_frame, text='Password:', bg='white', fg='black').grid(row=2, column=0, padx=20, pady=10)
+        self.password_entry = tk.Entry(self.login_frame, width=30, show='*')
+        self.password_entry.grid(row=2, column=1, padx=20, pady=10)
+
+        login_button = tk.Button(self.login_frame, text='Login', command=self.login, padx=12, bg='white')
+        login_button.config(font=('Monotype Corsiva', 20))
+        login_button.grid(row=3, columnspan=2, pady=10)
+
+    def login(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        if username == 'admin' and password == '123':
+            self.login_frame.destroy()
+            self.main_menu()
+        else:
+            messagebox.showerror('Login Failed', 'Invalid username or password')
+
+    def main_menu(self):
+        main_frame = tk.Frame(self.root)
+        main_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        self.root.title('Hide Your Data')
+        self.root.geometry('1200x800')
+        self.root.resizable(width=False, height=False)
+
+        title = tk.Label(main_frame, text='Image Steganography', font=('Monotype Corsiva', 30, 'bold'), bg='white')
+        title.grid(pady=10)
+
+        encode = tk.Button(main_frame, text="Encode", command=lambda: self.encode_frame1(main_frame), padx=12, bg='white')
+        encode.config(font=('Monotype Corsiva', 20))
+        encode.grid(row=2)
+
+        decode = tk.Button(main_frame, text="Decode", command=lambda: self.decode_frame1(main_frame), padx=12, bg='white')
+        decode.config(font=('Monotype Corsiva', 20))
+        decode.grid(row=3, pady=12)
+
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+
+    def encode_frame1(self, F):
+        F.destroy()
+        encode_frame = tk.Frame(self.root)
+        encode_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        label1 = tk.Label(encode_frame, text='Select the Image or Generate Image:', bg='white', font=('Agency FB', 25, 'bold'))
+        label1.grid()
+
+        button_bws = tk.Button(encode_frame, text='Select Image', command=lambda: self.encode_frame2(encode_frame))
+        button_bws.config(font=('Monotype Corsiva', 18), bg='white')
+        button_bws.grid(pady=5)
+
+        button_ai = tk.Button(encode_frame, text='Generate Image', command=lambda: self.generate_ai_image(encode_frame))
+        button_ai.config(font=('Monotype Corsiva', 18), bg='white')
+        button_ai.grid(pady=5)
+
+        button_back = tk.Button(encode_frame, text='Back to Main Menu', command=lambda: self.back_to_main_menu(encode_frame))
+        button_back.config(font=('Monotype Corsiva', 18), bg='white')
+        button_back.grid(pady=15)
+
+    def encode_frame2(self, encode_frame):
+        myfile = filedialog.askopenfilename(filetypes=[('Image Files', '*.png;*.jpg;*.jpeg')])
+        if not myfile:
+            messagebox.showinfo("Alert", "Please select an image file")
+            return
+
+        image = Image.open(myfile)
+        e_pg = tk.Frame(self.root)
+        encode_frame.destroy()
+        e_pg.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        img = ImageTk.PhotoImage(image.resize((300, 200)))
+        label_image = tk.Label(e_pg, image=img)
+        label_image.image = img
+        label_image.grid(row=2, columnspan=2, padx=10, pady=10)
+
+        self.encode_logic(e_pg, image)
+
+    def generate_ai_image(self, F):
+        F.destroy()
+        e_pg = tk.Frame(self.root)
+        e_pg.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        label_prompt = tk.Label(e_pg, text='Enter the type of image you want to generate :', font=('Monotype Corsiva', 14, 'bold'))
+        label_prompt.grid(pady=10)
+        self.image_prompt_entry = tk.Entry(e_pg, width=50)
+        self.image_prompt_entry.grid(pady=10)
+
+        generate_button = tk.Button(e_pg, text='Generate', command=lambda: self.fetch_and_display_image(e_pg))
+        generate_button.config(font=('Monotype Corsiva', 14), bg='#e8c1c7')
+        generate_button.grid(pady=15)
+
+        cancel_button = tk.Button(e_pg, text='Cancel', command=lambda: self.back_to_main_menu(e_pg))
+        cancel_button.config(font=('Monotype Corsiva', 14), bg='#e8c1c7')
+        cancel_button.grid()
+
+    def fetch_and_display_image(self, e_pg):
+        prompt = self.image_prompt_entry.get()
+        if not prompt:
+            messagebox.showinfo("Alert", "Please enter a description for the image.")
+            return
+
+        api_key = 'j93c0AucTpATWP220eUl1c8wLpotF3SnfS7aXiHfWzLpAWw8lroArfxG'
+        url = f'https://api.pexels.com/v1/search?query={prompt}&per_page=1'
+
+        headers = {
+            'Authorization': api_key,
+        }
+
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+
+            if data['photos']:
+                photo = data['photos'][0]
+                photo_url = photo['src']['large']
+                image = Image.open(requests.get(photo_url, stream=True).raw)
+                image = image.resize((300, 200))
+                img = ImageTk.PhotoImage(image)
+
+                label_image = tk.Label(e_pg, image=img)
+                label_image.image = img
+                label_image.grid(row=2, columnspan=2, padx=10, pady=10)
+
+                self.encode_logic(e_pg, image)
+            else:
+                messagebox.showerror("Error", "No images found for the given query.")
+
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror("Error", f"Failed to fetch image: {str(e)}")
+
+    def encode_logic(self, e_pg, image):
+        label_message = tk.Label(e_pg, text='Enter the message', font=('Monotype Corsiva', 14, 'bold'))
+        label_message.grid(row=3, pady=10)
+
+        text_a = tk.Text(e_pg, width=50, height=10)
+        text_a.grid(row=4, pady=10)
+
+        label_code = tk.Label(e_pg, text='Enter 4-digit code:', font=('Monotype Corsiva', 14, 'bold'))
+        label_code.grid(row=5, pady=10)
+
+        self.code_entry = tk.Entry(e_pg, width=10, show='*')
+        self.code_entry.grid(row=6, pady=10)
+
+        encode_button = tk.Button(e_pg, text='Encode', command=lambda: self.encode_image(text_a, image, self.code_entry.get()))
+        encode_button.config(font=('Monotype Corsiva', 14), bg='#1ad1ff')
+        encode_button.grid(pady=15)
+
+        cancel_button = tk.Button(e_pg, text='Cancel', command=lambda: self.back_to_main_menu(e_pg))
+        cancel_button.config(font=('Monotype Corsiva', 14), bg='#1ad1ff')
+        cancel_button.grid()
+
+    def encode_image(self, text_a, image, code):
+        data = text_a.get("1.0", "end-1c")
+
+        if not data:
+            messagebox.showinfo("Alert", "Kindly enter text in the TextBox")
+            return
+
+        if not code or len(code) != 4 or not code.isdigit():
+            messagebox.showinfo("Alert", "Please enter a valid 4-digit code.")
+            return
+
+        new_img = image.copy()
+        self.hide_data(new_img, data + code)
+        self.save_image(new_img)
+
+    def save_image(self, image):
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
+        if file_path:
+            image.save(file_path)
+            self.output_image_size = os.stat(file_path).st_size
+            messagebox.showinfo("Success", "Encoding successful!\nFile saved at: " + file_path)
+        else:
+            messagebox.showinfo("Error", "File not saved")
+
+    def hide_data(self, image, data):
+        data += chr(0)  # Add delimiter to indicate the end of data
+        binary_data = ''.join([format(ord(i), "08b") for i in data])
+        data_index = 0
+
+        pixels = list(image.getdata())
+
+        for i in range(len(pixels)):
+            pixel = list(pixels[i])
+            for j in range(3):
+                if data_index < len(binary_data):
+                    pixel[j] = int(bin(pixel[j])[2:9] + binary_data[data_index], 2)
+                    data_index += 1
+            pixels[i] = tuple(pixel)
+        
+        image.putdata(pixels)
+
+    def decode_frame1(self, F):
+        F.destroy()
+        decode_frame = tk.Frame(self.root)
+        decode_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        label1 = tk.Label(decode_frame, text='Select Image to Decode', bg='white', font=('Monotype Corsiva', 25, 'bold'))
+        label1.grid()
+
+        button_bws = tk.Button(decode_frame, text='Select Image', command=lambda: self.decode_frame2(decode_frame))
+        button_bws.config(font=('Monotype Corsiva', 18), bg='white')
+        button_bws.grid(pady=15)
+
+        button_back = tk.Button(decode_frame, text='Back to Main Menu', command=lambda: self.back_to_main_menu(decode_frame))
+        button_back.config(font=('Monotype Corsiva', 18), bg='white')
+        button_back.grid(pady=15)
+
+    def decode_frame2(self, decode_frame):
+        myfile = filedialog.askopenfilename(filetypes=[('Image Files', '*.png;*.jpg;*.jpeg')])
+        if not myfile:
+            messagebox.showinfo("Alert", "Please select an image file")
+            return
+
+        image = Image.open(myfile)
+        d_pg = tk.Frame(self.root)
+        decode_frame.destroy()
+        d_pg.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        img = ImageTk.PhotoImage(image.resize((300, 200)))
+        label_image = tk.Label(d_pg, image=img)
+        label_image.image = img
+        label_image.grid(row=2, columnspan=2, padx=10, pady=10)
+
+        self.decode_logic(d_pg, image)
+
+    def decode_logic(self, d_pg, image):
+        label_code = tk.Label(d_pg, text='Enter 4-digit code:', font=('Agency FB', 14, 'bold'))
+        label_code.grid(row=5, pady=10)
+
+        self.code_entry = tk.Entry(d_pg, width=10, show='*')
+        self.code_entry.grid(row=6, pady=10)
+
+        decode_button = tk.Button(d_pg, text='Decode', command=lambda: self.decode_image(image, self.code_entry.get()))
+        decode_button.config(font=('Agency FB', 14), bg='#1ad1ff')
+        decode_button.grid(pady=15)
+
+        cancel_button = tk.Button(d_pg, text='Cancel', command=lambda: self.back_to_main_menu(d_pg))
+        cancel_button.config(font=('Agency FB', 14), bg='#1ad1ff')
+        cancel_button.grid()
+
+    def decode_image(self, image, code):
+        if not code or len(code) != 4 or not code.isdigit():
+            messagebox.showinfo("Alert", "Please enter a valid 4-digit code.")
+            return
+
+        hidden_data = self.retrieve_data(image)
+        if hidden_data.endswith(code):
+            messagebox.showinfo("Decoded Data", hidden_data[:-4])
+        else:
+            messagebox.showerror("Error", "Incorrect code or corrupted data")
+
+    def retrieve_data(self, image):
+        binary_data = ""
+        pixels = list(image.getdata())
+
+        for pixel in pixels:
+            for j in range(3):
+                binary_data += bin(pixel[j])[-1]
+
+        all_bytes = [binary_data[i:i + 8] for i in range(0, len(binary_data), 8)]
+
+        decoded_data = ""
+        for byte in all_bytes:
+            decoded_data += chr(int(byte, 2))
+            if decoded_data[-1] == chr(0):
+                break
+
+        return decoded_data[:-1]  # Remove the delimiter
+
+    def back_to_main_menu(self, current_frame):
+        current_frame.destroy()
+        self.main_menu()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = IMG_Stegno(root)
+    root.mainloop()
