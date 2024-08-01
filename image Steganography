@@ -134,7 +134,7 @@ class IMG_Stegno:
             messagebox.showinfo("Alert", "Please enter a description for the image.")
             return
 
-        api_key = 'j93c0AucTpATWP220eUl1c8wLpotF3SnfS7aXiHfWzLpAWw8lroArfxG'
+        api_key = 'your Api key'
         url = f'https://api.pexels.com/v1/search?query={prompt}&per_page=1'
 
         headers = {
